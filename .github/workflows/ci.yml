@@ -23,7 +23,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -e ".[mcp,pdf,watch]"
+          pip install -e ".[mcp,pdf,watch,sql]"
           pip install pytest
 
       - name: Run tests
