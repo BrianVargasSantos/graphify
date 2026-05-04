@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import os
+import urllib.parse
 from pathlib import Path
 
 
 VIDEO_EXTENSIONS = {'.mp4', '.mov', '.webm', '.mkv', '.avi', '.m4v', '.mp3', '.wav', '.m4a', '.ogg'}
 URL_PREFIXES = ('http://', 'https://', 'www.')
+_YOUTUBE_HOSTS = {"youtube.com", "www.youtube.com", "m.youtube.com", "music.youtube.com", "youtu.be", "www.youtu.be"}
 
 _DEFAULT_MODEL = "base"
 _TRANSCRIPTS_DIR = "graphify-out/transcripts"
@@ -52,6 +54,9 @@ def download_audio(url: str, output_dir: Path) -> Path:
     Uses cached file if already downloaded.
     """
     from graphify.security import validate_url
+    host = (urllib.parse.urlparse(url).hostname or "").lower().rstrip(".")
+    if host not in _YOUTUBE_HOSTS:
+        raise ValueError(f"Unsupported video host for download: {host or '<missing>'}")
     validate_url(url)  # blocks private IPs, bad schemes before yt-dlp runs
     yt_dlp = _get_yt_dlp()
     output_dir.mkdir(parents=True, exist_ok=True)

@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -10,6 +9,7 @@ import pytest
 from graphify.transcribe import (
     VIDEO_EXTENSIONS,
     build_whisper_prompt,
+    download_audio,
     transcribe,
     transcribe_all,
 )
@@ -108,6 +108,12 @@ def test_transcribe_missing_faster_whisper(tmp_path):
     with patch("graphify.transcribe._get_whisper", side_effect=ImportError("faster-whisper not installed")):
         with pytest.raises(ImportError):
             transcribe(video, output_dir=tmp_path / "out")
+
+
+def test_download_audio_rejects_fake_youtube_host(tmp_path):
+    """download_audio must not hand attacker-controlled YouTube lookalikes to yt-dlp."""
+    with pytest.raises(ValueError, match="Unsupported video host"):
+        download_audio("https://youtube.com.attacker.test/watch?v=1", tmp_path)
 
 
 # ---------------------------------------------------------------------------

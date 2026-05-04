@@ -39,6 +39,33 @@ _SENSITIVE_PATTERNS = [
     re.compile(r'(aws_credentials|gcloud_credentials|service.account)', re.IGNORECASE),
 ]
 
+_SECRET_CONTENT_SCAN_BYTES = 65_536
+_SECRET_CONTENT_PATTERNS = [
+    re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----"),
+    re.compile(r"(?<![A-Z0-9])AKIA[0-9A-Z]{16}(?![A-Z0-9])"),
+    re.compile(r"(?<![A-Za-z0-9])gh[pousr]_[A-Za-z0-9_]{30,}"),
+    re.compile(r"github_pat_[A-Za-z0-9_]{20,}"),
+    re.compile(r"(?<![A-Za-z0-9])sk-[A-Za-z0-9]{32,}"),
+    re.compile(
+        r"""(?ix)
+        \b(api[_-]?key|secret|token|password|private[_-]?key)\b
+        \s*[:=]\s*
+        ["'][^"'\n]{12,}["']
+        """
+    ),
+]
+
+
+def _contains_sensitive_content(path: Path) -> bool:
+    """Return True if file content contains high-confidence secret material."""
+    try:
+        with path.open("rb") as f:
+            sample = f.read(_SECRET_CONTENT_SCAN_BYTES)
+    except OSError:
+        return False
+    text = sample.decode("utf-8", errors="ignore")
+    return any(pattern.search(text) for pattern in _SECRET_CONTENT_PATTERNS)
+
 # Signals that a .md/.txt file is actually a converted academic paper
 _PAPER_SIGNALS = [
     re.compile(r'\barxiv\b', re.IGNORECASE),
@@ -689,7 +716,7 @@ def detect(root: Path, *, follow_symlinks: bool = False) -> dict:
                 continue
         if _is_ignored(p, root, ignore_patterns):
             continue
-        if _is_sensitive(p):
+        if _is_sensitive(p) or _contains_sensitive_content(p):
             skipped_sensitive.append(str(p))
             continue
         ftype = classify_file(p)

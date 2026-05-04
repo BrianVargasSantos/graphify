@@ -127,6 +127,18 @@ def test_to_html_contains_nodes_and_edges():
         assert "RAW_EDGES" in content
 
 
+def test_to_html_does_not_emit_inline_neighbor_handlers():
+    """Node IDs must not be interpolated into inline onclick attributes."""
+    G = make_graph()
+    communities = cluster(G)
+    with tempfile.TemporaryDirectory() as tmp:
+        out = Path(tmp) / "graph.html"
+        to_html(G, communities, str(out))
+        content = out.read_text()
+        assert 'onclick="focusNode' not in content
+        assert "addEventListener('click'" in content
+
+
 def test_to_html_member_counts_accepted():
     """to_html accepts member_counts without raising."""
     G = make_graph()

@@ -255,3 +255,15 @@ def test_detect_video_not_in_words(tmp_path):
     result = detect(tmp_path)
     # Only video file present — total_words should be 0
     assert result["total_words"] == 0
+
+
+def test_detect_skips_high_confidence_secret_content(tmp_path):
+    """Files with obvious secret assignments are skipped even with harmless names."""
+    (tmp_path / "settings.py").write_text('API_KEY = "sk-' + "a" * 48 + '"\n')
+    (tmp_path / "main.py").write_text("print('safe')\n")
+
+    result = detect(tmp_path)
+    code_files = result["files"]["code"]
+    assert any("main.py" in f for f in code_files)
+    assert not any("settings.py" in f for f in code_files)
+    assert any("settings.py" in f for f in result["skipped_sensitive"])

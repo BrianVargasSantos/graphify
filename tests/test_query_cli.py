@@ -16,7 +16,9 @@ def _write_graph(tmp_path):
     G.add_node("n3", label="build", source_file="build.py", source_location="L1", community=1)
     G.add_edge("n1", "n2", relation="calls", confidence="EXTRACTED", context="call")
     G.add_edge("n2", "n3", relation="imports", confidence="EXTRACTED", context="import")
-    graph_path = tmp_path / "graph.json"
+    graph_dir = tmp_path / "graphify-out"
+    graph_dir.mkdir()
+    graph_path = graph_dir / "graph.json"
     graph_path.write_text(json.dumps(json_graph.node_link_data(G, edges="links")))
     return graph_path
 

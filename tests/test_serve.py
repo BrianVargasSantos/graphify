@@ -185,7 +185,9 @@ def test_query_graph_text_heuristic_context_filter_changes_traversal():
 def test_load_graph_roundtrip(tmp_path):
     G = _make_graph()
     data = json_graph.node_link_data(G, edges="links")
-    p = tmp_path / "graph.json"
+    graphify_dir = tmp_path / "graphify-out"
+    graphify_dir.mkdir()
+    p = graphify_dir / "graph.json"
     p.write_text(json.dumps(data))
     G2 = _load_graph(str(p))
     assert G2.number_of_nodes() == G.number_of_nodes()
@@ -196,3 +198,15 @@ def test_load_graph_missing_file(tmp_path):
     graphify_dir.mkdir()
     with pytest.raises(SystemExit):
         _load_graph(str(graphify_dir / "nonexistent.json"))
+
+
+def test_load_graph_blocks_paths_outside_graphify_out(tmp_path, monkeypatch):
+    G = _make_graph()
+    data = json_graph.node_link_data(G, edges="links")
+    (tmp_path / "graphify-out").mkdir()
+    outside = tmp_path / "other.json"
+    outside.write_text(json.dumps(data))
+
+    monkeypatch.chdir(tmp_path)
+    with pytest.raises(SystemExit):
+        _load_graph(str(outside))

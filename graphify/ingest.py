@@ -9,6 +9,15 @@ from pathlib import Path
 
 from graphify.security import safe_fetch, safe_fetch_text, validate_url
 
+_TWITTER_HOSTS = {"twitter.com", "www.twitter.com", "mobile.twitter.com", "x.com", "www.x.com"}
+_ARXIV_HOSTS = {"arxiv.org", "www.arxiv.org", "export.arxiv.org"}
+_GITHUB_HOSTS = {"github.com", "www.github.com"}
+_YOUTUBE_HOSTS = {"youtube.com", "www.youtube.com", "m.youtube.com", "music.youtube.com", "youtu.be", "www.youtu.be"}
+
+
+def _hostname(url: str) -> str:
+    return (urllib.parse.urlparse(url).hostname or "").lower().rstrip(".")
+
 
 def _yaml_str(s: str) -> str:
     """Escape a string for embedding in a YAML double-quoted scalar."""
@@ -26,14 +35,14 @@ def _safe_filename(url: str, suffix: str) -> str:
 
 def _detect_url_type(url: str) -> str:
     """Classify the URL for targeted extraction."""
-    lower = url.lower()
-    if "twitter.com" in lower or "x.com" in lower:
+    host = _hostname(url)
+    if host in _TWITTER_HOSTS:
         return "tweet"
-    if "arxiv.org" in lower:
+    if host in _ARXIV_HOSTS:
         return "arxiv"
-    if "github.com" in lower:
+    if host in _GITHUB_HOSTS:
         return "github"
-    if "youtube.com" in lower or "youtu.be" in lower:
+    if host in _YOUTUBE_HOSTS:
         return "youtube"
     parsed = urllib.parse.urlparse(url)
     path = parsed.path.lower()

@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 import pytest
-from graphify.ingest import save_query_result
+from graphify.ingest import _detect_url_type, save_query_result
 
 
 def test_file_created(tmp_path):
@@ -66,3 +66,12 @@ def test_answer_in_body(tmp_path):
     out = save_query_result("what is the answer?", answer, mem)
     content = out.read_text()
     assert answer in content
+
+
+def test_detect_url_type_does_not_match_fake_youtube_host():
+    assert _detect_url_type("https://youtube.com.attacker.test/watch?v=1") == "webpage"
+
+
+def test_detect_url_type_accepts_real_youtube_hosts():
+    assert _detect_url_type("https://www.youtube.com/watch?v=abc") == "youtube"
+    assert _detect_url_type("https://youtu.be/abc") == "youtube"

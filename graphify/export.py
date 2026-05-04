@@ -188,19 +188,27 @@ function showInfo(nodeId) {{
   const n = nodesDS.get(nodeId);
   if (!n) return;
   const neighborIds = network.getConnectedNodes(nodeId);
-  const neighborItems = neighborIds.map(nid => {{
-    const nb = nodesDS.get(nid);
-    const color = nb ? nb.color.background : '#555';
-    return `<span class="neighbor-link" style="border-left-color:${{esc(color)}}" onclick="focusNode(${{JSON.stringify(nid)}})">${{esc(nb ? nb.label : nid)}}</span>`;
-  }}).join('');
   document.getElementById('info-content').innerHTML = `
     <div class="field"><b>${{esc(n.label)}}</b></div>
     <div class="field">Type: ${{esc(n._file_type || 'unknown')}}</div>
     <div class="field">Community: ${{esc(n._community_name)}}</div>
     <div class="field">Source: ${{esc(n._source_file || '-')}}</div>
     <div class="field">Degree: ${{n._degree}}</div>
-    ${{neighborIds.length ? `<div class="field" style="margin-top:8px;color:#aaa;font-size:11px">Neighbors (${{neighborIds.length}})</div><div id="neighbors-list">${{neighborItems}}</div>` : ''}}
+    ${{neighborIds.length ? `<div class="field" style="margin-top:8px;color:#aaa;font-size:11px">Neighbors (${{neighborIds.length}})</div><div id="neighbors-list"></div>` : ''}}
   `;
+  const neighborsList = document.getElementById('neighbors-list');
+  if (neighborsList) {{
+    neighborIds.forEach(nid => {{
+      const nb = nodesDS.get(nid);
+      const color = nb ? nb.color.background : '#555';
+      const item = document.createElement('span');
+      item.className = 'neighbor-link';
+      item.style.borderLeftColor = color;
+      item.textContent = nb ? nb.label : nid;
+      item.addEventListener('click', () => focusNode(nid));
+      neighborsList.appendChild(item);
+    }});
+  }}
 }}
 
 function focusNode(nodeId) {{

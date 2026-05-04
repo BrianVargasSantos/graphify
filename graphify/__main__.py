@@ -1273,7 +1273,7 @@ def main() -> None:
             print("Usage: graphify query \"<question>\" [--dfs] [--context C] [--budget N] [--graph path]", file=sys.stderr)
             sys.exit(1)
         from graphify.serve import _query_graph_text
-        from graphify.security import sanitize_label
+        from graphify.security import validate_graph_path
         from networkx.readwrite import json_graph
         question = sys.argv[2]
         use_dfs = "--dfs" in sys.argv
@@ -1307,14 +1307,11 @@ def main() -> None:
                 graph_path = args[i + 1]; i += 2
             else:
                 i += 1
-        gp = Path(graph_path).resolve()
-        if not gp.exists():
-            print(f"error: graph file not found: {gp}", file=sys.stderr)
-            sys.exit(1)
-        if not gp.suffix == ".json":
-            print(f"error: graph file must be a .json file", file=sys.stderr)
-            sys.exit(1)
         try:
+            gp = validate_graph_path(graph_path)
+            if not gp.suffix == ".json":
+                print(f"error: graph file must be a .json file", file=sys.stderr)
+                sys.exit(1)
             import json as _json
             import networkx as _nx
             _raw = _json.loads(gp.read_text(encoding="utf-8"))
@@ -1359,6 +1356,7 @@ def main() -> None:
             print("Usage: graphify path \"<source>\" \"<target>\" [--graph path]", file=sys.stderr)
             sys.exit(1)
         from graphify.serve import _score_nodes
+        from graphify.security import validate_graph_path
         from networkx.readwrite import json_graph
         import networkx as _nx
         source_label = sys.argv[2]
@@ -1368,9 +1366,10 @@ def main() -> None:
         for i, a in enumerate(args):
             if a == "--graph" and i + 1 < len(args):
                 graph_path = args[i + 1]
-        gp = Path(graph_path).resolve()
-        if not gp.exists():
-            print(f"error: graph file not found: {gp}", file=sys.stderr)
+        try:
+            gp = validate_graph_path(graph_path)
+        except Exception as exc:
+            print(f"error: {exc}", file=sys.stderr)
             sys.exit(1)
         _raw = json.loads(gp.read_text(encoding="utf-8"))
         try:
@@ -1409,6 +1408,7 @@ def main() -> None:
             print("Usage: graphify explain \"<node>\" [--graph path]", file=sys.stderr)
             sys.exit(1)
         from graphify.serve import _find_node
+        from graphify.security import validate_graph_path
         from networkx.readwrite import json_graph
         label = sys.argv[2]
         graph_path = "graphify-out/graph.json"
@@ -1416,9 +1416,10 @@ def main() -> None:
         for i, a in enumerate(args):
             if a == "--graph" and i + 1 < len(args):
                 graph_path = args[i + 1]
-        gp = Path(graph_path).resolve()
-        if not gp.exists():
-            print(f"error: graph file not found: {gp}", file=sys.stderr)
+        try:
+            gp = validate_graph_path(graph_path)
+        except Exception as exc:
+            print(f"error: {exc}", file=sys.stderr)
             sys.exit(1)
         _raw = json.loads(gp.read_text(encoding="utf-8"))
         try:
@@ -1592,6 +1593,7 @@ def main() -> None:
         # showing top-K outbound edges per symbol.
         from typing import Optional as _Opt
         from graphify.tree_html import write_tree_html, DEFAULT_MAX_CHILDREN
+        from graphify.security import validate_graph_path
         graph_path = Path(_GRAPHIFY_OUT) / "graph.json"
         output_path: "_Opt[Path]" = None
         root: "_Opt[str]" = None
@@ -1625,8 +1627,10 @@ def main() -> None:
                 return
             else:
                 i_arg += 1
-        if not graph_path.is_file():
-            print(f"error: graph.json not found at {graph_path}", file=sys.stderr)
+        try:
+            graph_path = validate_graph_path(graph_path)
+        except Exception as exc:
+            print(f"error: {exc}", file=sys.stderr)
             sys.exit(1)
         if output_path is None:
             output_path = graph_path.parent / "GRAPH_TREE.html"
